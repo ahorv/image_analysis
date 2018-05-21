@@ -7,6 +7,7 @@ import glob
 import os
 import re
 import sys
+import math
 from os.path import join
 from copy import deepcopy
 from collections import namedtuple
@@ -23,12 +24,12 @@ import pyqtgraph as pg
 import ImageProcessingLibrary
 from dialog import Ui_dialog
 
-TIMER_INTERVAL = 200
+TIMER_INTERVAL = 100
 SLIDESHOW_STEP = 1        # 0 if used with lists but 1 if with sqlite
-SLIDESHOW_INTERVAL = 100  # milliseconds
+SLIDESHOW_INTERVAL = 50   # milliseconds
 
 ######################################################################
-## Hoa: 21.05.2018 Version 2 : Image Analysis
+## Hoa: 21.05.2018 Version 3 : Image Analysis
 ######################################################################
 # Collects all images hdr and ldr, generates colormaped images
 # and histogram and shows them as slide show.
@@ -40,6 +41,11 @@ SLIDESHOW_INTERVAL = 100  # milliseconds
 #
 # 18.05.2018 : first implemented
 # 21.05.2018 : using SQLite database
+# 21.05.2018 : Alle images shown are preprocesed and saved in db
+#
+# Todo:
+# - datenbanken wie list item benennen
+# - datenbanken nicht loeschen
 #
 ######################################################################
 
@@ -159,10 +165,8 @@ class MyForm(QMainWindow):
         ###########################################################
         self.qimage_width  = 2592
         self.qimage_height = 1944
-        self.delta = 15  # number of imgs to be let out before processing starts
         self.MAP = 'HSV'                   # Set type of color map used 'JET','HSV'
         self.database_name = "img_analysis.db"
-
 
         ###########################################################
         #  Misc Variables
@@ -349,10 +353,25 @@ class MyForm(QMainWindow):
         try:
             db = sqlite3.connect(self.database_name)
             cursor = db.cursor()
+
             cursor.execute("DROP TABLE IF EXISTS jpg_img")
             cursor.execute("CREATE TABLE jpg_img(id INT, img BLOB)")
+
             cursor.execute("DROP TABLE IF EXISTS hdr_img")
             cursor.execute("CREATE TABLE hdr_img(id INT, img BLOB)")
+
+            cursor.execute("DROP TABLE IF EXISTS jpg_hsv")
+            cursor.execute("CREATE TABLE jpg_hsv(id INT, img BLOB)")
+
+            cursor.execute("DROP TABLE IF EXISTS jpg_jet")
+            cursor.execute("CREATE TABLE jpg_jet(id INT, img BLOB)")
+
+            cursor.execute("DROP TABLE IF EXISTS hdr_hsv")
+            cursor.execute("CREATE TABLE hdr_hsv(id INT, img BLOB)")
+
+            cursor.execute("DROP TABLE IF EXISTS hdr_jet")
+            cursor.execute("CREATE TABLE hdr_jet(id INT, img BLOB)")
+
             db.commit()
             db.close()
         except Exception as e:
@@ -369,15 +388,33 @@ class MyForm(QMainWindow):
             cur.close()
             con.close()
 
-            nparr = np.fromstring(blob, np.uint8)
-            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            if blob:
+                nparr = np.fromstring(blob, np.uint8)
+                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            else:
+                img = None
 
             return img
 
         except Exception as e:
             print('getImgBy_ObjID: Error: ' + str(e))
+
+    def img2MAP_byteStr(self,img,map):
+        mask = ImageProcessingLibrary.Mask(self.CAM)
+
+        if map == 'HSV':
+            img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+            img = cv2.applyColorMap(img_gray, cv2.COLORMAP_HSV)
+
+        if map == 'JET':
+            img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+            img = cv2.applyColorMap(img_gray, cv2.COLORMAP_JET)
+
+        img_masked = mask.maske_OpenCV_Image(img)
+
+        img_bytestr = cv2.imencode('.jpg', img_masked)[1].tostring()
+
+        return img_bytestr
 
     def load_all_images_toDB(self):
 
@@ -387,7 +424,7 @@ class MyForm(QMainWindow):
                 return
 
             self.tot_numb_of_images = len(self.jpg_img_path_list)
-            totnum_of_imgs = self.tot_numb_of_images // 10
+            totnum_of_imgs = math.ceil(self.tot_numb_of_images * (1/3))
 
             print('Start after {} images'.format(totnum_of_imgs))
 
@@ -404,17 +441,30 @@ class MyForm(QMainWindow):
 
                 self.loading_complete = False
 
-                with open(jpg_path, 'rb') as jpg, open(hdr_path,'rb') as hdr:
-                    jpg_bytes = jpg.read()
-                    hdr_bytes = hdr.read()
-                jpg.close()
-                hdr.close()
+                jpg_img = self.readImg_as_BGR2RGB(jpg_path)
+                hdr_img = self.readImg_as_BGR2RGB(hdr_path)
+
+                jpg_bytes = cv2.imencode('.jpg', jpg_img)[1].tostring()
+                hdr_bytes = cv2.imencode('.jpg', hdr_img)[1].tostring()
 
                 jpg_ObjID = self.extractObjID(jpg_path)
                 hdr_ObjID = self.extractObjID(jpg_path)
 
+                JPG2HSV = self.img2MAP_byteStr(jpg_img,'HSV')
+                JPG2JET = self.img2MAP_byteStr(jpg_img,'JET')
+
+                HD2RHSV = self.img2MAP_byteStr(hdr_img,'HSV')
+                HDR2JET = self.img2MAP_byteStr(hdr_img,'JET')
+
                 cur.execute("insert into jpg_img VALUES(?,?)", (jpg_ObjID, sqlite3.Binary(jpg_bytes)))
                 cur.execute("insert into hdr_img VALUES(?,?)", (hdr_ObjID, sqlite3.Binary(hdr_bytes)))
+
+                cur.execute("insert into jpg_hsv VALUES(?,?)", (hdr_ObjID, sqlite3.Binary(JPG2HSV)))
+                cur.execute("insert into jpg_jet VALUES(?,?)", (hdr_ObjID, sqlite3.Binary(JPG2JET)))
+
+                cur.execute("insert into hdr_hsv VALUES(?,?)", (hdr_ObjID, sqlite3.Binary(HD2RHSV)))
+                cur.execute("insert into hdr_jet VALUES(?,?)", (hdr_ObjID, sqlite3.Binary(HDR2JET)))
+
                 con.commit()
 
                 img_cnt += 1
@@ -439,7 +489,6 @@ class MyForm(QMainWindow):
 
         except Exception as e:
             print("Error: could not load images to database: ", str(e))
-
 
     #########################################################
     # Image Processing
@@ -517,25 +566,22 @@ class MyForm(QMainWindow):
             if self.slideshow_step >= self.tot_numb_of_images:
                 self.slideshow_step = 1
 
-            '''
-            self.ui.lbl_JPG_img.setPixmap(self.pixMapImg_JPG_img_list[self.slideshow_step])
-            self.ui.lbl_HDR_img.setPixmap(self.pixMapImg_HDR_img_list[self.slideshow_step])
-
-            self.ui.lbl_JPG_HSV.setPixmap(self.img2Colmapd(self.openCVImg_JPG_img_list[self.slideshow_step], self.MAP))
-            self.ui.lbl_HDR_HSV.setPixmap(self.img2Colmapd(self.openCVImg_HDR_img_list[self.slideshow_step], self.MAP))
-
-            self.plot_rgb_histogram(self.openCVImg_JPG_img_list[self.slideshow_step])
-            self.plot_hdr_histogram(self.openCVImg_HDR_img_list[self.slideshow_step])
-            '''
-
             jpg_img = self.getImgByObjID(self.slideshow_step, 'jpg_img')
             hdr_img = self.getImgByObjID(self.slideshow_step, 'hdr_img')
+
+            if  self.MAP is 'HSV':
+                jpg_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_hsv')
+                hdr_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_hsv')
+
+            if  self.MAP is 'JET':
+                jpg_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_jet')
+                hdr_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_jet')
 
             self.ui.lbl_JPG_img.setPixmap(self.cv2qpixmap(jpg_img))
             self.ui.lbl_HDR_img.setPixmap(self.cv2qpixmap(hdr_img))
 
-            self.ui.lbl_JPG_COLMAP.setPixmap(self.cv2qpixmap(self.img2Colmapd(jpg_img, self.MAP)))
-            self.ui.lbl_HDR_COLMAP.setPixmap(self.cv2qpixmap(self.img2Colmapd(hdr_img, self.MAP)))
+            self.ui.lbl_JPG_COLMAP.setPixmap(self.cv2qpixmap(jpg_MAP))
+            self.ui.lbl_HDR_COLMAP.setPixmap(self.cv2qpixmap(hdr_MAP))
 
             self.plot_rgb_histogram(jpg_img)
             self.plot_hdr_histogram(hdr_img)
@@ -612,19 +658,32 @@ class MyForm(QMainWindow):
             else:
                 current_image = self.slideshow_step
 
-            self.ui.lbl_JPG_img.setPixmap(self.pixMapImg_JPG_img_list[self.slideshow_step])
-            self.ui.lbl_HDR_img.setPixmap(self.pixMapImg_HDR_img_list[self.slideshow_step])
+            jpg_img = self.getImgByObjID(self.slideshow_step, 'jpg_img')
+            hdr_img = self.getImgByObjID(self.slideshow_step, 'hdr_img')
 
-            self.ui.lbl_JPG_COLMAP.setPixmap(self.img2Colmapd(self.openCVImg_JPG_img_list[self.slideshow_step], self.MAP))
-            self.ui.lbl_HDR_COLMAP.setPixmap(self.img2Colmapd(self.openCVImg_HDR_img_list[self.slideshow_step], self.MAP))
+            if  self.MAP is 'HSV':
+                jpg_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_hsv')
+                hdr_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_hsv')
 
-            self.plot_rgb_histogram(self.openCVImg_JPG_img_list[self.slideshow_step])
-            self.plot_hdr_histogram(self.openCVImg_HDR_img_list[self.slideshow_step])
+            if  self.MAP is 'JET':
+                jpg_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_jet')
+                hdr_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_jet')
+
+            self.ui.lbl_JPG_img.setPixmap(self.cv2qpixmap(jpg_img))
+            self.ui.lbl_HDR_img.setPixmap(self.cv2qpixmap(hdr_img))
+
+            self.ui.lbl_JPG_COLMAP.setPixmap(self.cv2qpixmap(jpg_MAP))
+            self.ui.lbl_HDR_COLMAP.setPixmap(self.cv2qpixmap(hdr_MAP))
+
+            self.plot_rgb_histogram(jpg_img)
+            self.plot_hdr_histogram(hdr_img)
+
 
             self.ui.lbl_progress_status.setText(
                 'Showing image {} of {} '.format(current_image, self.tot_numb_of_images))
 
         except Exception as e:
+            self.slideshow_step += 1
             print('Slideshow : {}'.format(e))
 
     def forward_oneImage(self):
@@ -638,19 +697,31 @@ class MyForm(QMainWindow):
             else:
                 current_image = self.slideshow_step
 
-            self.ui.lbl_JPG_img.setPixmap(self.pixMapImg_JPG_img_list[self.slideshow_step])
-            self.ui.lbl_HDR_img.setPixmap(self.pixMapImg_HDR_img_list[self.slideshow_step])
+            jpg_img = self.getImgByObjID(self.slideshow_step, 'jpg_img')
+            hdr_img = self.getImgByObjID(self.slideshow_step, 'hdr_img')
 
-            self.ui.lbl_JPG_COLMAP.setPixmap(self.img2Colmapd(self.openCVImg_JPG_img_list[self.slideshow_step], self.MAP))
-            self.ui.lbl_HDR_COLMAP.setPixmap(self.img2Colmapd(self.openCVImg_HDR_img_list[self.slideshow_step], self.MAP))
+            if  self.MAP is 'HSV':
+                jpg_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_hsv')
+                hdr_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_hsv')
 
-            self.plot_rgb_histogram(self.openCVImg_JPG_img_list[self.slideshow_step])
-            self.plot_hdr_histogram(self.openCVImg_HDR_img_list[self.slideshow_step])
+            if  self.MAP is 'JET':
+                jpg_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_jet')
+                hdr_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_jet')
+
+            self.ui.lbl_JPG_img.setPixmap(self.cv2qpixmap(jpg_img))
+            self.ui.lbl_HDR_img.setPixmap(self.cv2qpixmap(hdr_img))
+
+            self.ui.lbl_JPG_COLMAP.setPixmap(self.cv2qpixmap(jpg_MAP))
+            self.ui.lbl_HDR_COLMAP.setPixmap(self.cv2qpixmap(hdr_MAP))
+
+            self.plot_rgb_histogram(jpg_img)
+            self.plot_hdr_histogram(hdr_img)
 
             self.ui.lbl_progress_status.setText(
                 'Showing image {} of {} '.format(current_image, self.tot_numb_of_images))
 
         except Exception as e:
+            self.slideshow_step -= 1
             print('Foreward one image: {}'.format(e))
 
     #########################################################
