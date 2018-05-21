@@ -363,7 +363,6 @@ class MyForm(QMainWindow):
             con = sqlite3.connect(self.database_name)
             cur = con.cursor()
             query = "SELECT img FROM " +type+ " WHERE id ="+str(objid)
-            print(query)
             cur.execute(query)
             blob = cur.fetchone()[0]
 
@@ -373,7 +372,7 @@ class MyForm(QMainWindow):
             nparr = np.fromstring(blob, np.uint8)
             img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-            #img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
             return img
 
@@ -434,7 +433,7 @@ class MyForm(QMainWindow):
 
             cur.close()
             con.close()
-
+            self.ui.lbl_progress_status.setText("")
             self.loading_complete = True
             self.ui.lbl_info.setText('Done')
 
@@ -528,8 +527,6 @@ class MyForm(QMainWindow):
             self.plot_rgb_histogram(self.openCVImg_JPG_img_list[self.slideshow_step])
             self.plot_hdr_histogram(self.openCVImg_HDR_img_list[self.slideshow_step])
             '''
-
-            print("SlideShow step: {}".format(self.slideshow_step))
 
             jpg_img = self.getImgByObjID(self.slideshow_step, 'jpg_img')
             hdr_img = self.getImgByObjID(self.slideshow_step, 'hdr_img')
