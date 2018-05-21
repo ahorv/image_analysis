@@ -874,6 +874,11 @@ class MyForm(QMainWindow):
 
     def collectAllImgSubDirectories(self,pathToDirectories):
         try:
+            print(pathToDirectories)
+            # hier prüfen ob eine db mit diesem namen schon existiert
+            # falls ja dann nicht nochmal laden!
+            # sondern direkt die db laden und von dort arbeiten
+
             path_img5 = join(pathToDirectories,"imgs5")
             path_hdr  = join(pathToDirectories, "hdr")
 
