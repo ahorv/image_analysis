@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="69cf635f-00b9-4f1e-a50f-5432de8aa465" name="Default" comment="" />
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="TRACKING_ENABLED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CoverageDataManager">
+    <SUITE FILE_PATH="coverage/ImageAnalysis$main.coverage" NAME="main Coverage Results" MODIFIED="1526913016962" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+  </component>
+  <component name="FileEditorManager">
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file leaf-file-name="main.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/main.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="229">
+              <caret line="362" column="0" lean-forward="false" selection-start-line="362" selection-start-column="0" selection-end-line="362" selection-end-column="0" />
+              <folding>
+                <element signature="e#0#31#0" expanded="true" />
+                <element signature="e#8882#9290#0" expanded="false" />
+                <element signature="e#9348#10491#0" expanded="false" />
+                <element signature="e#12338#12754#0" expanded="false" />
+                <element signature="e#12839#13451#0" expanded="false" />
+                <element signature="e#14244#14717#0" expanded="false" />
+                <element signature="e#17693#17963#0" expanded="false" />
+                <element signature="e#18012#18109#0" expanded="false" />
+                <element signature="e#18166#18450#0" expanded="false" />
+                <element signature="e#18646#19209#0" expanded="false" />
+                <element signature="e#19263#19823#0" expanded="false" />
+                <element signature="e#21769#22412#0" expanded="false" />
+                <element signature="e#22457#23655#0" expanded="false" />
+                <element signature="e#23698#24888#0" expanded="false" />
+                <element signature="e#24931#26039#0" expanded="false" />
+                <element signature="e#26208#26360#0" expanded="false" />
+                <element signature="e#26426#26754#0" expanded="false" />
+                <element signature="e#26808#27451#0" expanded="false" />
+                <element signature="e#27495#27641#0" expanded="false" />
+                <element signature="e#27689#27878#0" expanded="false" />
+                <element signature="e#27922#28031#0" expanded="false" />
+                <element signature="e#28239#28401#0" expanded="false" />
+                <element signature="e#28455#29799#0" expanded="false" />
+                <element signature="e#29856#30224#0" expanded="false" />
+                <element signature="e#30466#30772#0" expanded="false" />
+                <element signature="e#30824#31130#0" expanded="false" />
+                <element signature="e#31201#32307#0" expanded="false" />
+                <marker date="1526913013870" expanded="false" signature="13497:14055" ph="..." />
+                <marker date="1526913013870" expanded="true" signature="14363:14391" ph="DROP TABLE I... " />
+                <marker date="1526913013870" expanded="true" signature="14422:14460" ph="CREATE TABLE... Images" />
+                <marker date="1526913013870" expanded="true" signature="14491:14519" ph="DROP TABLE I... " />
+                <marker date="1526913013870" expanded="true" signature="14550:14588" ph="CREATE TABLE... Images" />
+                <marker date="1526913013870" expanded="true" signature="16547:16578" ph="insert into type... " />
+                <marker date="1526913013870" expanded="true" signature="16650:16681" ph="insert into type... " />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="__init__.py" pinned="false" current-in-tab="true">
+        <entry file="file://$USER_HOME$/AppData/Local/conda/conda/envs/skycam/Lib/site-packages/django/conf/__init__.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="177">
+              <caret line="40" column="0" lean-forward="false" selection-start-line="40" selection-start-column="0" selection-end-line="40" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>ImageProcessingLibrary</find>
+      <find>load_all_images</find>
+      <find>slideshow_step</find>
+    </findStrings>
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/test.py" />
+        <option value="$PROJECT_DIR$/ImageProcessingLibrary.py" />
+        <option value="$PROJECT_DIR$/delete_me.py" />
+        <option value="$PROJECT_DIR$/main.py" />
+      </list>
+    </option>
+  </component>
+  <component name="JsBuildToolGruntFileManager" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsBuildToolPackageJson" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsGulpfileManager">
+    <detection-done>true</detection-done>
+    <sorting>DEFINITION_ORDER</sorting>
+  </component>
+  <component name="ProjectFrameBounds">
+    <option name="x" value="20" />
+    <option name="y" value="51" />
+    <option name="width" value="1848" />
+    <option name="height" value="1066" />
+  </component>
+  <component name="ProjectView">
+    <navigator currentView="ProjectPane" proportions="" version="1">
+      <flattenPackages />
+      <showMembers />
+      <showModules />
+      <showLibraryContents />
+      <hideEmptyPackages />
+      <abbreviatePackageNames />
+      <autoscrollToSource />
+      <autoscrollFromSource />
+      <sortByType />
+      <manualOrder />
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="ImageAnalysis" type="b2602c69:ProjectViewProjectNode" />
+              <item name="ImageAnalysis" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+      <pane id="Scratches" />
+      <pane id="Scope" />
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager" selected="Python.main">
+    <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="ImageAnalysis" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+    </configuration>
+    <recent_temporary>
+      <list size="1">
+        <item index="0" class="java.lang.String" itemvalue="Python.main" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="ShelveChangesManager" show_recycled="false">
+    <option name="remove_strategy" value="false" />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="69cf635f-00b9-4f1e-a50f-5432de8aa465" name="Default" comment="" />
+      <created>1526668868560</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1526668868560</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="20" y="51" width="1848" height="1066" extended-state="0" />
+    <layout>
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.22508039" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.09787472" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.29046088" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.18113612" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Data View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+    </layout>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="VcsContentAnnotationSettings">
+    <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <option name="time" value="10" />
+    </breakpoint-manager>
+    <watches-manager />
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#31#0" expanded="true" />
+            <element signature="e#8882#9290#0" expanded="false" />
+            <element signature="e#9348#10491#0" expanded="false" />
+            <element signature="e#12338#12754#0" expanded="false" />
+            <element signature="e#12839#13451#0" expanded="false" />
+            <element signature="e#14244#14717#0" expanded="false" />
+            <element signature="e#17693#17963#0" expanded="false" />
+            <element signature="e#18012#18109#0" expanded="false" />
+            <element signature="e#18166#18450#0" expanded="false" />
+            <element signature="e#18646#19209#0" expanded="false" />
+            <element signature="e#19263#19823#0" expanded="false" />
+            <element signature="e#21769#22412#0" expanded="false" />
+            <element signature="e#22457#23655#0" expanded="false" />
+            <element signature="e#23698#24888#0" expanded="false" />
+            <element signature="e#24931#26039#0" expanded="false" />
+            <element signature="e#26208#26360#0" expanded="false" />
+            <element signature="e#26426#26754#0" expanded="false" />
+            <element signature="e#26808#27451#0" expanded="false" />
+            <element signature="e#27495#27641#0" expanded="false" />
+            <element signature="e#27689#27878#0" expanded="false" />
+            <element signature="e#27922#28031#0" expanded="false" />
+            <element signature="e#28239#28401#0" expanded="false" />
+            <element signature="e#28455#29799#0" expanded="false" />
+            <element signature="e#29856#30224#0" expanded="false" />
+            <element signature="e#30466#30772#0" expanded="false" />
+            <element signature="e#30824#31130#0" expanded="false" />
+            <element signature="e#31201#32307#0" expanded="false" />
+            <marker date="1526913013870" expanded="false" signature="13497:14055" ph="..." />
+            <marker date="1526913013870" expanded="true" signature="14363:14391" ph="DROP TABLE I... " />
+            <marker date="1526913013870" expanded="true" signature="14422:14460" ph="CREATE TABLE... Images" />
+            <marker date="1526913013870" expanded="true" signature="14491:14519" ph="DROP TABLE I... " />
+            <marker date="1526913013870" expanded="true" signature="14550:14588" ph="CREATE TABLE... Images" />
+            <marker date="1526913013870" expanded="true" signature="16547:16578" ph="insert into type... " />
+            <marker date="1526913013870" expanded="true" signature="16650:16681" ph="insert into type... " />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/__settings.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="546">
+          <caret line="596" column="11" lean-forward="false" selection-start-line="596" selection-start-column="11" selection-end-line="596" selection-end-column="11" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ImageProcessingLibrary.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="119">
+          <caret line="7" column="0" lean-forward="true" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+            <element signature="e#610#1635#0" expanded="false" />
+            <element signature="e#1693#2347#0" expanded="false" />
+            <element signature="e#2400#2744#0" expanded="false" />
+            <element signature="e#2807#2967#0" expanded="false" />
+            <element signature="e#3018#4162#0" expanded="false" />
+            <element signature="e#4205#4404#0" expanded="false" />
+            <element signature="e#4456#5343#0" expanded="false" />
+            <element signature="e#5401#5924#0" expanded="false" />
+            <element signature="e#5980#7345#0" expanded="false" />
+            <element signature="e#7427#8503#0" expanded="false" />
+            <element signature="e#8538#11326#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/delete_me.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="270">
+          <caret line="18" column="0" lean-forward="false" selection-start-line="18" selection-start-column="0" selection-end-line="18" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/AppData/Local/conda/conda/envs/skycam/Lib/concurrent/futures/thread.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="256">
+          <caret line="54" column="0" lean-forward="false" selection-start-line="54" selection-start-column="0" selection-end-line="54" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="229">
+          <caret line="362" column="0" lean-forward="false" selection-start-line="362" selection-start-column="0" selection-end-line="362" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#31#0" expanded="true" />
+            <element signature="e#8882#9290#0" expanded="false" />
+            <element signature="e#9348#10491#0" expanded="false" />
+            <element signature="e#12338#12754#0" expanded="false" />
+            <element signature="e#12839#13451#0" expanded="false" />
+            <element signature="e#14244#14717#0" expanded="false" />
+            <element signature="e#17693#17963#0" expanded="false" />
+            <element signature="e#18012#18109#0" expanded="false" />
+            <element signature="e#18166#18450#0" expanded="false" />
+            <element signature="e#18646#19209#0" expanded="false" />
+            <element signature="e#19263#19823#0" expanded="false" />
+            <element signature="e#21769#22412#0" expanded="false" />
+            <element signature="e#22457#23655#0" expanded="false" />
+            <element signature="e#23698#24888#0" expanded="false" />
+            <element signature="e#24931#26039#0" expanded="false" />
+            <element signature="e#26208#26360#0" expanded="false" />
+            <element signature="e#26426#26754#0" expanded="false" />
+            <element signature="e#26808#27451#0" expanded="false" />
+            <element signature="e#27495#27641#0" expanded="false" />
+            <element signature="e#27689#27878#0" expanded="false" />
+            <element signature="e#27922#28031#0" expanded="false" />
+            <element signature="e#28239#28401#0" expanded="false" />
+            <element signature="e#28455#29799#0" expanded="false" />
+            <element signature="e#29856#30224#0" expanded="false" />
+            <element signature="e#30466#30772#0" expanded="false" />
+            <element signature="e#30824#31130#0" expanded="false" />
+            <element signature="e#31201#32307#0" expanded="false" />
+            <marker date="1526913013870" expanded="false" signature="13497:14055" ph="..." />
+            <marker date="1526913013870" expanded="true" signature="14363:14391" ph="DROP TABLE I... " />
+            <marker date="1526913013870" expanded="true" signature="14422:14460" ph="CREATE TABLE... Images" />
+            <marker date="1526913013870" expanded="true" signature="14491:14519" ph="DROP TABLE I... " />
+            <marker date="1526913013870" expanded="true" signature="14550:14588" ph="CREATE TABLE... Images" />
+            <marker date="1526913013870" expanded="true" signature="16547:16578" ph="insert into type... " />
+            <marker date="1526913013870" expanded="true" signature="16650:16681" ph="insert into type... " />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/AppData/Local/conda/conda/envs/skycam/Lib/site-packages/django/conf/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="177">
+          <caret line="40" column="0" lean-forward="false" selection-start-line="40" selection-start-column="0" selection-end-line="40" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+  </component>
+</project>
