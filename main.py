@@ -38,7 +38,13 @@ SLIDESHOW_INTERVAL = 50   # milliseconds
 #
 # New /Changes:
 # ----------------------------------------------------------------------
+# Remarks: additional libraries:
+#          - pyqtgraph
 #
+# Resolve the HDF5 error by:
+#           - conda uninstall hdf5
+#           - conda install hdf5
+# ----------------------------------------------------------------------
 # 18.05.2018 : first implemented
 # 21.05.2018 : using SQLite database
 # 21.05.2018 : Alle images shown are preprocesed and saved in db
