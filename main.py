@@ -37,9 +37,12 @@ MAX_LOAD_IMAGES = 200     # max number of images loaded from source dir
 # Using SQLite database to hold all loaded images.
 #
 # Images of one day have to be in own folder. Each image folder must
-# contain a 'output' folder, with preprocessed hdr images.
+# contain a 'temp' folder. Each folder of a day must contain a
+# 'output' folder with the preprocessed hdr images.
+#
 # Images from camera 1 respective camera 2 have to be contained within
 # a folder named 'camera_1' respective 'camera_2'.
+# Path Example: C:image_analysis\camera_1\20181012_raw_cam1\temp\20181012_090032
 #
 # New /Changes:
 # ----------------------------------------------------------------------
