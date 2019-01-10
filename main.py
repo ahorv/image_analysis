@@ -876,8 +876,17 @@ class MyForm(QMainWindow):
             return
         self.hdr_img_shape = img.shape
 
+    def get_image_name(self, dir):
+        print('get_sw_version path:  {}'.format(dir))
 
-    #########################################################
+        if os.path.isfile(join(dir, 'raw_img-2.jpg')):
+            return 'raw_img0.jpg'
+        elif os.path.isfile(join(dir, 'raw_img5.jpg')):
+            return 'raw_img5.jpg'
+
+
+
+        #########################################################
     # Widget events
     #########################################################
     def draw_circle(self, event, x, y, flags, param):
@@ -988,7 +997,7 @@ class MyForm(QMainWindow):
             self.ui.pushButton_browse.setEnabled(False)
             allDirs = self.getDirectories(join(sourceDir, 'temp'), max_img_to_load = MAX_LOAD_IMAGES)
 
-            name_img5 = "raw_img5.jpg"
+            name_img5 = self.get_image_name(allDirs[0])
             name_hdr  = "hdr_data.jpg"
 
             for dir in allDirs:
