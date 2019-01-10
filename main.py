@@ -53,7 +53,7 @@ MAX_LOAD_IMAGES = 200     # max number of images loaded from source dir
 # 18.05.2018 : first implemented
 # 21.05.2018 : using SQLite database
 # 21.05.2018 : Alle images shown are preprocesed and saved in db
-# 10.01.2019 : Lädt Bilder aus der DB  (teilweise noch fehlerhaft !)
+# 10.01.2019 : Loads now images from a SQLite database (still minor errors!)
 #
 #
 ######################################################################
