@@ -3,7 +3,7 @@ from __future__ import division
 import cv2
 import numpy as np
 import sqlite3
-import glob
+from glob import glob
 import os
 import re
 import sys
@@ -27,14 +27,19 @@ from dialog import Ui_dialog
 TIMER_INTERVAL = 100
 SLIDESHOW_STEP = 1        # 0 if used with lists but 1 if with sqlite
 SLIDESHOW_INTERVAL = 50   # milliseconds
+MAX_LOAD_IMAGES = 200     # max number of images loaded from source dir
 
 ######################################################################
-## Hoa: 21.05.2018 Version 3 : Image Analysis
+## Hoa: 10.01.2019 Version 5 : Image Analysis
 ######################################################################
-# Collects all images hdr and ldr, generates colormaped images
+# Collects all images hdr and ldr, generates color mapped images
 # and histogram and shows them as slide show.
-#
 # Using SQLite database to hold all loaded images.
+#
+# Images of one day have to be in own folder. Each image folder must
+# contain a 'output' folder, with preprocessed hdr images.
+# Images from camera 1 respective camera 2 have to be contained within
+# a folder named 'camera_1' respective 'camera_2'.
 #
 # New /Changes:
 # ----------------------------------------------------------------------
@@ -48,10 +53,8 @@ SLIDESHOW_INTERVAL = 50   # milliseconds
 # 18.05.2018 : first implemented
 # 21.05.2018 : using SQLite database
 # 21.05.2018 : Alle images shown are preprocesed and saved in db
+# 10.01.2019 : Lädt Bilder aus der DB  (teilweise noch fehlerhaft !)
 #
-# Todo:
-# - datenbanken wie list item benennen
-# - datenbanken nicht loeschen
 #
 ######################################################################
 
@@ -169,10 +172,13 @@ class MyForm(QMainWindow):
         ###########################################################
         #  Settings and initial values
         ###########################################################
+        self.hdr_img_shape = 0
+        self.jpg_img_shape = 0
         self.qimage_width  = 2592
         self.qimage_height = 1944
         self.MAP = 'HSV'                   # Set type of color map used 'JET','HSV'
         self.database_name = "img_analysis.db"
+        self.database_avaiable = False
 
         ###########################################################
         #  Misc Variables
@@ -216,6 +222,30 @@ class MyForm(QMainWindow):
     def load_last_root_path_from_settings(self, last_root_path):
 
         self.enable_disable_run_but(False)
+
+        if (os.path.isfile("img_analysis.db")):
+            self.database_avaiable = True
+            text = 'Found Database. Would you like to load it?'
+            ret = self.showMsgBox(text)
+            if ret == QMessageBox.Yes:
+                print('Loading database')
+                self.ui.lbl_progress_status.setText('Loading database')
+
+                ok = self.load_database()
+
+                if(ok):
+                    self.enable_disable_run_but(True)
+                    self.loading_complete = True
+                else:
+                    self.database_avaiable = True
+                    self.load_last_root_path(last_root_path)
+
+                return last_root_path
+        else:
+            self.load_last_root_path(last_root_path)
+
+
+    def load_last_root_path(self, last_root_path):
         self.ui.lbl_progress_status.setText('Select a image folder')
 
         if last_root_path:
@@ -223,7 +253,7 @@ class MyForm(QMainWindow):
             self.root_path_to_images = last_root_path
             self.populateListViews(last_root_path)
         else:
-            self.showErrorMsgBox("Path to images not set!","")
+            self.showErrorMsgBox("Path to images not set!", "")
 
         return last_root_path
 
@@ -355,6 +385,25 @@ class MyForm(QMainWindow):
     #########################################################
     # SQLite database related
     #########################################################
+    def load_database(self):
+        try:
+            db_ok = False
+            db = sqlite3.connect(self.database_name)
+            cursor = db.cursor()
+            cursor.execute("SELECT * FROM jpg_img ORDER BY id DESC LIMIT 1")
+            last_id = cursor.fetchone()[0]
+
+            if last_id > 0:
+                self.tot_numb_of_images = last_id
+                db_ok = True
+            else:
+                db_ok = False
+
+            return db_ok
+
+        except Exception as e:
+            print('load_database: Error: ' + str(e))
+
     def create_DB(self):
         try:
             db = sqlite3.connect(self.database_name)
@@ -403,10 +452,10 @@ class MyForm(QMainWindow):
             return img
 
         except Exception as e:
-            print('getImgBy_ObjID: Error: ' + str(e))
+            print('Error getImgByObjID: id:{} : {} '.format(objid,e))
 
-    def img2MAP_byteStr(self,img,map):
-        mask = ImageProcessingLibrary.Mask(self.CAM)
+    def img2MAP_byteStr(self,img,map,with_mask = True):
+        mask = ImageProcessingLibrary.Mask(self.CAM, img.shape)
 
         if map == 'HSV':
             img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
@@ -416,7 +465,10 @@ class MyForm(QMainWindow):
             img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
             img = cv2.applyColorMap(img_gray, cv2.COLORMAP_JET)
 
-        img_masked = mask.maske_OpenCV_Image(img)
+        if with_mask:
+            img_masked = mask.maske_OpenCV_Image(img)
+        else:
+            img_masked = img
 
         img_bytestr = cv2.imencode('.jpg', img_masked)[1].tostring()
 
@@ -445,6 +497,8 @@ class MyForm(QMainWindow):
 
             for jpg_path, hdr_path in zip(self.jpg_img_path_list,self.hdr_img_path_list):
 
+                img_cnt += 1
+
                 self.loading_complete = False
 
                 jpg_img = self.readImg_as_BGR2RGB(jpg_path)
@@ -453,27 +507,24 @@ class MyForm(QMainWindow):
                 jpg_bytes = cv2.imencode('.jpg', jpg_img)[1].tostring()
                 hdr_bytes = cv2.imencode('.jpg', hdr_img)[1].tostring()
 
-                jpg_ObjID = self.extractObjID(jpg_path)
-                hdr_ObjID = self.extractObjID(jpg_path)
-
                 JPG2HSV = self.img2MAP_byteStr(jpg_img,'HSV')
                 JPG2JET = self.img2MAP_byteStr(jpg_img,'JET')
 
-                HD2RHSV = self.img2MAP_byteStr(hdr_img,'HSV')
-                HDR2JET = self.img2MAP_byteStr(hdr_img,'JET')
+                HD2RHSV = self.img2MAP_byteStr(hdr_img,'HSV',with_mask=False)
+                HDR2JET = self.img2MAP_byteStr(hdr_img,'JET',with_mask=False)
 
-                cur.execute("insert into jpg_img VALUES(?,?)", (jpg_ObjID, sqlite3.Binary(jpg_bytes)))
-                cur.execute("insert into hdr_img VALUES(?,?)", (hdr_ObjID, sqlite3.Binary(hdr_bytes)))
+                cur.execute("insert into jpg_img VALUES(?,?)", (img_cnt, sqlite3.Binary(jpg_bytes)))
+                cur.execute("insert into hdr_img VALUES(?,?)", (img_cnt, sqlite3.Binary(hdr_bytes)))
 
-                cur.execute("insert into jpg_hsv VALUES(?,?)", (hdr_ObjID, sqlite3.Binary(JPG2HSV)))
-                cur.execute("insert into jpg_jet VALUES(?,?)", (hdr_ObjID, sqlite3.Binary(JPG2JET)))
+                cur.execute("insert into jpg_hsv VALUES(?,?)", (img_cnt, sqlite3.Binary(JPG2HSV)))
+                cur.execute("insert into jpg_jet VALUES(?,?)", (img_cnt, sqlite3.Binary(JPG2JET)))
 
-                cur.execute("insert into hdr_hsv VALUES(?,?)", (hdr_ObjID, sqlite3.Binary(HD2RHSV)))
-                cur.execute("insert into hdr_jet VALUES(?,?)", (hdr_ObjID, sqlite3.Binary(HDR2JET)))
+                cur.execute("insert into hdr_hsv VALUES(?,?)", (img_cnt, sqlite3.Binary(HD2RHSV)))
+                cur.execute("insert into hdr_jet VALUES(?,?)", (img_cnt, sqlite3.Binary(HDR2JET)))
 
                 con.commit()
 
-                img_cnt += 1
+
 
                 if len(status_txt) >= 200:
                     status_txt = 'Loading Images: .'
@@ -604,7 +655,7 @@ class MyForm(QMainWindow):
     def img2Colmapd(self, opencv_img, map ='HSV'):
         #https://www.tutorialspoint.com/opencv/opencv_color_maps.htm
         try:
-            mask = ImageProcessingLibrary.Mask(self.CAM)
+            mask = ImageProcessingLibrary.Mask(self.CAM, opencv_img.shape)
 
             if map == 'HSV':
                 img_gray = cv2.cvtColor(opencv_img, cv2.COLOR_RGB2GRAY)
@@ -623,7 +674,7 @@ class MyForm(QMainWindow):
 
     def startStopSlideShow(self):
 
-        if len(self.jpg_img_path_list) == 0:
+        if (len(self.jpg_img_path_list) == 0 and not self.database_avaiable):
             return
 
         btn_text = self.ui.pushButton_RunImgSeq.text()
@@ -730,6 +781,27 @@ class MyForm(QMainWindow):
             self.slideshow_step -= 1
             print('Foreward one image: {}'.format(e))
 
+    def getDirectories(self, pathToDirectories, max_img_to_load = 2000):
+        try:
+            allDirs = []
+            img_cnt = 1
+
+            for dirs in sorted(glob(os.path.join(pathToDirectories, "*", ""))):
+                if img_cnt > max_img_to_load:
+                    break
+                elif os.path.isdir(dirs):
+                    if dirs.rstrip('\\').rpartition('\\')[-1] :
+                        allDirs.append(dirs)
+                        # print('{}'.format(str(dirs)))
+                        img_cnt += 1
+
+            print('All images loaded! - Found {} images.'.format(img_cnt))
+
+            return allDirs
+
+        except Exception as e:
+            print('getDirectories: Error: ' + str(e))
+
     #########################################################
     # Misc
     #########################################################
@@ -789,6 +861,19 @@ class MyForm(QMainWindow):
 
         return objid
 
+    def set_img5_size(self, img):
+        if img is None:
+            print('Error set_img5_size: missing image')
+            return
+        self.jpg_img_shape = img.shape
+
+    def set_hdr_size(self, img):
+        if img is None:
+            print('Error set_hdr_size: missing image')
+            return
+        self.hdr_img_shape = img.shape
+
+
     #########################################################
     # Widget events
     #########################################################
@@ -842,6 +927,15 @@ class MyForm(QMainWindow):
         except Exception as e:
             print('Error evenFilter: {}'.format(e))
 
+    def showMsgBox(self, str_msg, infoTxt='Message'):
+        try:
+            qm = QMessageBox()
+            ret = qm.question(self, infoTxt, str_msg,qm.Yes | qm.No)
+            return ret
+
+        except Exception as e:
+            print('showMsgBox: {}'.format(e))
+
     def showErrorMsgBox(self, str_msg, error):
         try:
             msg = QMessageBox()
@@ -865,7 +959,7 @@ class MyForm(QMainWindow):
             new_path = join(self.root_path_to_images,'camera_1',self.curr_item_slec_cam1)
             self.collectAllImgSubDirectories(new_path)
             self.CAM = 1
-            self.create_mask(self.CAM)
+            #self.create_mask(self.CAM)
         except Exception as e:
             print('on_item_doubleclicked_cam1: {}'.format(e))
 
@@ -874,37 +968,36 @@ class MyForm(QMainWindow):
             new_path = join(self.root_path_to_images,'camera_2',self.curr_item_slec_cam2)
             self.collectAllImgSubDirectories(new_path)
             self.CAM = 2
-            self.create_mask(self.CAM)
+            #self.create_mask(self.CAM)
         except Exception as e:
             print('on_item_doubleclicked_cam2: {}'.format(e))
 
-    def collectAllImgSubDirectories(self,pathToDirectories):
+    def collectAllImgSubDirectories(self,path_to_sourceDir):
         try:
-            print(pathToDirectories)
-            # hier prüfen ob eine db mit diesem namen schon existiert
-            # falls ja dann nicht nochmal laden!
-            # sondern direkt die db laden und von dort arbeiten
+            sourceDir = path_to_sourceDir.replace('/','\\')
 
-            path_img5 = join(pathToDirectories,"imgs5")
-            path_hdr  = join(pathToDirectories, "hdr")
-
-            if (not os.path.exists(path_img5) or not os.path.exists(path_hdr)):
-                msg = "could not find directories img5 respective hdr"
+            if not os.path.exists(join(sourceDir, 'temp')):
+                msg = "could not find temp directory. Missing preprocessed files?"
                 error = ""
                 self.showErrorMsgBox(msg, error)
                 return
 
             self.ui.pushButton_browse.setEnabled(False)
+            allDirs = self.getDirectories(join(sourceDir, 'temp'), max_img_to_load = MAX_LOAD_IMAGES)
 
-            for img in sorted(glob.glob1(path_img5, "*.jpg")):
-                new_path = join(path_img5,img)
-                if os.path.isfile(new_path):
-                    self.jpg_img_path_list.append(new_path)
+            name_img5 = "raw_img5.jpg"
+            name_hdr  = "hdr_data.jpg"
 
-            for img in sorted(glob.glob1(path_hdr, "*.jpg")):
-                new_path = join(path_hdr, img)
-                if os.path.isfile(new_path):
-                    self.hdr_img_path_list.append(new_path)
+            for dir in allDirs:
+                path_img = join(dir,name_img5)
+                path_hdr = join(dir,'output',name_hdr)
+                self.jpg_img_path_list.append(path_img)
+                self.hdr_img_path_list.append(path_hdr)
+
+            jpg_img = self.readImg_as_BGR2RGB(self.jpg_img_path_list[0])
+            hdr_img = self.readImg_as_BGR2RGB(self.hdr_img_path_list[0])
+            self.set_img5_size(jpg_img)
+            self.set_hdr_size(hdr_img)
 
             pool = ThreadPoolExecutor(max_workers=3)
             # pool.submit(self.load_all_images)

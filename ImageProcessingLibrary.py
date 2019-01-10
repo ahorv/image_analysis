@@ -4,13 +4,13 @@ from PyQt5 import QtGui
 
 class Mask(object):
 
-    def __init__(self,cam_type):
+    def __init__(self,cam_type, shape):
 
         try:
             self.cam_type = cam_type
             self.mask = None
-            size = 1944, 2592, 3
-            empty_img = np.zeros(size, dtype=np.uint8)
+            #size = 1944, 2592, 3
+            empty_img = np.zeros(shape, dtype=np.uint8)
             if self.cam_type is 1:
                 self.mask = self.cmask([880, 1190], 1117, empty_img)
             if self.cam_type is 2:
