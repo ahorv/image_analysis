@@ -14,7 +14,7 @@ class Mask(object):
             if self.cam_type is 1:
                 self.mask = self.cmask([880, 1190], 1117, empty_img)
             if self.cam_type is 2:
-                self.mask = self.cmask([950, 1340], 1117, empty_img)
+                self.mask = self.cmask([985, 1340], 1089, empty_img)  # [950, 1340], 1117,
 
         except Exception as e:
             print("init Mask: ", str(e))
@@ -59,6 +59,18 @@ class Mask(object):
             red   = input_image[:, :, 0]
             green = input_image[:, :, 1]
             blue  = input_image[:, :, 2]
+
+            # Show mask in red
+            '''
+            h = input_image.shape[0]            
+            w = input_image.shape[1]
+
+            for y in range(0, h):
+                for x in range(0, w):
+                    if self.mask[y, x] == 0:
+                        red[y, x] = 225
+            r_img = red
+            '''
 
             r_img = red.astype(float)   * self.mask
             g_img = green.astype(float) * self.mask

@@ -9,7 +9,6 @@ import re
 import sys
 import math
 from os.path import join
-from copy import deepcopy
 from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
 
@@ -25,15 +24,17 @@ import ImageProcessingLibrary
 from dialog import Ui_dialog
 
 TIMER_INTERVAL = 100
-SLIDESHOW_STEP = 1        # 0 if used with lists but 1 if with sqlite
-SLIDESHOW_INTERVAL = 50   # milliseconds
-MAX_LOAD_IMAGES = 200     # max number of images loaded from source dir
+SLIDESHOW_STEP = 1         # 0 if used with lists but 1 if with sqlite
+SLIDESHOW_INTERVAL = 50    # milliseconds
+MAX_LOAD_IMAGES = 2000     # 2000     # max number of images loaded from source dir
 
 ######################################################################
-## Hoa: 10.01.2019 Version 5 : Image Analysis
+## Hoa: 15.01.2019 Version 6 : Image Analysis
 ######################################################################
-# Collects all images hdr and ldr, generates color mapped images
-# and histogram and shows them as slide show.
+# Collects all images (jpg no hdr), generates color mapped images
+# and histogram and shows them as slide show, as 3x3 subplot.
+# Images are from a exposure series with well, low and over exposed
+# images.
 # Using SQLite database to hold all loaded images.
 #
 # Images of one day have to be in own folder. Each image folder must
@@ -57,6 +58,7 @@ MAX_LOAD_IMAGES = 200     # max number of images loaded from source dir
 # 21.05.2018 : using SQLite database
 # 21.05.2018 : Alle images shown are preprocesed and saved in db
 # 10.01.2019 : Loads now images from a SQLite database (still minor errors!)
+# 15.01.2019 : No hdr images loades only jpg (errors fixed)
 #
 #
 ######################################################################
@@ -81,8 +83,8 @@ class MyForm(QMainWindow):
         ###########################################################
         # Connect Signal
         ###########################################################
-        self.ui.lbl_JPG_img.installEventFilter(self)
-        self.ui.lbl_JPG_img.setMouseTracking(True)
+        self.ui.lbl_JPG_img_1.installEventFilter(self)
+        self.ui.lbl_JPG_img_1.setMouseTracking(True)
 
         ####################################################################
         # Buttons Signals
@@ -112,13 +114,17 @@ class MyForm(QMainWindow):
         # QLabel - containers for images and plots
         ###########################################################
         # Set scaled properties
-        self.ui.lbl_JPG_img.setScaledContents(True)
-        self.ui.lbl_HDR_img.setScaledContents(True)
-        self.ui.lbl_JPG_COLMAP.setScaledContents(True)
-        self.ui.lbl_HDR_COLMAP.setScaledContents(True)
+        self.ui.lbl_JPG_img_1.setScaledContents(True)
+        self.ui.lbl_JPG_img_2.setScaledContents(True)
+        self.ui.lbl_JPG_img_3.setScaledContents(True)
 
-        self.ui.lbl_JPG_RGB_hist.setScaledContents(True)
-        self.ui.lbl_HDR_RGB_hist.setScaledContents(True)
+        self.ui.lbl_JPG_COLORMAP_1.setScaledContents(True)
+        self.ui.lbl_JPG_COLORMAP_2.setScaledContents(True)
+        self.ui.lbl_JPG_COLORMAP_3.setScaledContents(True)
+
+        self.ui.lbl_JPG_RGB_HIST_1.setScaledContents(True)
+        self.ui.lbl_JPG_RGB_HIST_2.setScaledContents(True)
+        self.ui.lbl_JPG_RGB_HIST_3.setScaledContents(True)
 
         ###########################################################
         # Timer update slider values
@@ -143,40 +149,48 @@ class MyForm(QMainWindow):
         ###########################################################
         #  Lists concerning one directory of JPG and HDR images
         ###########################################################
-        self.jpg_img_path_list = []
-        self.hdr_img_path_list = []
+        self.jpg_img_well_path_list = []
+        self.jpg_img_low_path_list = []
+        self.jpg_img_high_path_list = []
 
-        self.openCVImg_JPG_img_list = []
-        self.openCVImg_HDR_img_list = []
+        self.openCVImg_JPG_img_well_list = []
+        self.openCVImg_JPG_img_low_list  = []
+        self.openCVImg_JPG_img_high_list = []
 
-        self.pixMapImg_JPG_img_list = []  # shown in first upper label
-        self.pixMapImg_HDR_img_list = []  # shown in first lower label
+        self.pixMapImg_JPG_img_well_list = []
+        self.pixMapImg_JPG_img_low_list  = []
+        self.pixMapImg_JPG_img_high_list = []
 
         ###########################################################
         #  Plot Widgets used with pygraph
         ###########################################################
-        self.pw_rgb_hist = pg.PlotWidget(name='RGB_HIST')  # lbl_JPG_RGB_hist
-        self.pw_rgb_hist.setXRange(1,  350, padding=0)
-        #self.pw_rgb_hist.setYRange(0, 1400, padding=0)
+        self.pw_rgb_w_hist = pg.PlotWidget(name='RGB_HIST_well')
+        self.pw_rgb_w_hist.setXRange(1, 350, padding=0)
 
-        self.hist_plot_rgb_r = self.pw_rgb_hist.plot(pen = 'r')
-        self.hist_plot_rgb_g = self.pw_rgb_hist.plot(pen = 'g')
-        self.hist_plot_rgb_b = self.pw_rgb_hist.plot(pen = 'b')
-        self.ui.gridLayout.addWidget(self.pw_rgb_hist, 0, 2, 1, 1)
+        self.hist_w_plot_rgb_r = self.pw_rgb_w_hist.plot(pen ='r')
+        self.hist_w_plot_rgb_g = self.pw_rgb_w_hist.plot(pen ='g')
+        self.hist_w_plot_rgb_b = self.pw_rgb_w_hist.plot(pen ='b')
+        self.ui.gridLayout.addWidget(self.pw_rgb_w_hist, 0, 2, 1, 1)
 
-        self.pw_hdr_hist = pg.PlotWidget(name='HDR_HIST')  # lbl_HDR_RGB_hist
-        self.pw_hdr_hist.setXRange(1,  350, padding=0)
+        self.pw_rgb_l_hist = pg.PlotWidget(name='RGB_HIST_low')
+        self.pw_rgb_l_hist.setXRange(1, 350, padding=0)
 
-        self.hist_plot_hdr_r = self.pw_hdr_hist.plot(pen = 'r')
-        self.hist_plot_hdr_g = self.pw_hdr_hist.plot(pen = 'g')
-        self.hist_plot_hdr_b = self.pw_hdr_hist.plot(pen = 'b')
-        self.ui.gridLayout.addWidget(self.pw_hdr_hist, 1, 2, 1, 1)
+        self.hist_l_plot_rgb_r = self.pw_rgb_l_hist.plot(pen ='r')
+        self.hist_l_plot_rgb_g = self.pw_rgb_l_hist.plot(pen ='g')
+        self.hist_l_plot_rgb_b = self.pw_rgb_l_hist.plot(pen ='b')
+        self.ui.gridLayout.addWidget(self.pw_rgb_l_hist, 1, 2, 1, 1)
+
+        self.pw_rgb_h_hist = pg.PlotWidget(name='RGB_HIST_high')
+        self.pw_rgb_h_hist.setXRange(1, 350, padding=0)
+
+        self.hist_h_plot_rgb_r = self.pw_rgb_h_hist.plot(pen='r')
+        self.hist_h_plot_rgb_g = self.pw_rgb_h_hist.plot(pen='g')
+        self.hist_h_plot_rgb_b = self.pw_rgb_h_hist.plot(pen='b')
+        self.ui.gridLayout.addWidget(self.pw_rgb_h_hist, 2, 2, 1, 1)
 
         ###########################################################
         #  Settings and initial values
         ###########################################################
-        self.hdr_img_shape = 0
-        self.jpg_img_shape = 0
         self.qimage_width  = 2592
         self.qimage_height = 1944
         self.MAP = 'HSV'                   # Set type of color map used 'JET','HSV'
@@ -205,6 +219,7 @@ class MyForm(QMainWindow):
         ###########################################################
         self.optFlowList_exists = False  # If a list of optical flow img's exists
         self.loading_complete   = False  # process of loading images is completed
+        self.hdr_imgs_exist = False      # True if output folder with hdr images exists
 
         ###########################################################
         # Load images from last session as background task
@@ -246,7 +261,6 @@ class MyForm(QMainWindow):
                 return last_root_path
         else:
             self.load_last_root_path(last_root_path)
-
 
     def load_last_root_path(self, last_root_path):
         self.ui.lbl_progress_status.setText('Select a image folder')
@@ -290,14 +304,34 @@ class MyForm(QMainWindow):
         except Exception as e:
             print('collectSubCamDirs: Error: ' + str(e))
 
+    def collect_imgs(self, allDirs):
+        name_well = self.get_well_exposed_name(allDirs[0])
+        name_low  = self.get_low_exposed_name(allDirs[0])
+        name_high = self.get_high_exposed_name(allDirs[0])
+
+        #check if hdr images exist
+        if os.path.isfile(join(allDirs[0],'output','hdr_img')):
+            self.hdr_imgs_exist = True
+        else:
+            self.hdr_imgs_exist = False
+
+        for dir in allDirs:
+            path_img_well = join(dir, name_well)
+            path_img_low  = join(dir, name_low)
+            path_img_high = join(dir, name_high)
+
+            self.jpg_img_well_path_list.append(path_img_well)
+            self.jpg_img_low_path_list.append(path_img_low)
+            self.jpg_img_high_path_list.append(path_img_high)
+
     def load_all_images(self):
 
         try:
-            if(not self.jpg_img_path_list or not self.hdr_img_path_list):
+            if(not self.jpg_img_well_path_list or not self.jpg_img_low_path_list):
                 self.showErrorMsgBox("Could not load images.","No images found.")
                 return
 
-            self.tot_numb_of_images = len(self.jpg_img_path_list)
+            self.tot_numb_of_images = len(self.jpg_img_well_path_list)
             totnum_of_imgs = self.tot_numb_of_images // 10
 
             print('Start after {} images'.format(totnum_of_imgs))
@@ -307,18 +341,25 @@ class MyForm(QMainWindow):
             self.ui.lbl_progress_status.setText('Loading Images')
             status_txt = 'Loading Images: .'
 
-            for jpg_path, hdr_path in zip(self.jpg_img_path_list,self.hdr_img_path_list):
+            well_list = self.jpg_img_well_path_list
+            low_list  = self.jpg_img_low_path_list
+            high_list = self.jpg_img_high_path_list
+
+            for jpg_well, jpg_low,jpg_high in zip(well_list, low_list,high_list):
 
                 self.loading_complete = False
 
-                jpg_img = self.readImg_as_BGR2RGB(jpg_path)
-                hdr_img = self.readImg_as_BGR2RGB(hdr_path)
+                jpg_img_w = self.readImg_as_BGR2RGB(jpg_well)
+                jpg_img_l = self.readImg_as_BGR2RGB(jpg_low)
+                jpg_img_h = self.readImg_as_BGR2RGB(jpg_high)
 
-                self.openCVImg_JPG_img_list.append(jpg_img)
-                self.openCVImg_HDR_img_list.append(hdr_img)
+                self.openCVImg_JPG_img_well_list.append(jpg_img_w)
+                self.openCVImg_JPG_img_low_list.append(jpg_img_l)
+                self.openCVImg_JPG_img_high_list.append(jpg_img_h)
 
-                self.pixMapImg_JPG_img_list.append(self.cv2qpixmap(jpg_img))
-                self.pixMapImg_HDR_img_list.append(self.cv2qpixmap(hdr_img))
+                self.pixMapImg_JPG_img_well_list.append(self.cv2qpixmap(jpg_img_w))
+                self.pixMapImg_JPG_img_low_list.append(self.cv2qpixmap(jpg_img_l))
+                self.pixMapImg_JPG_img_high_list.append(self.cv2qpixmap(jpg_img_h))
 
                 img_cnt += 1
 
@@ -341,7 +382,7 @@ class MyForm(QMainWindow):
             print("Error: could not load image: ", str(e))
 
     def getImgDir_from_lineEdit(self):
-        pathString = self.jpg_img_path_list[0]
+        pathString = self.jpg_img_well_path_list[0]
         filePath = pathString.split('/')
         filePath = filePath[:-1]
         imageDirectory = ''
@@ -393,7 +434,7 @@ class MyForm(QMainWindow):
             db_ok = False
             db = sqlite3.connect(self.database_name)
             cursor = db.cursor()
-            cursor.execute("SELECT * FROM jpg_img ORDER BY id DESC LIMIT 1")
+            cursor.execute("SELECT * FROM jpg_img_w ORDER BY id DESC LIMIT 1")
             last_id = cursor.fetchone()[0]
 
             if last_id > 0:
@@ -412,23 +453,32 @@ class MyForm(QMainWindow):
             db = sqlite3.connect(self.database_name)
             cursor = db.cursor()
 
-            cursor.execute("DROP TABLE IF EXISTS jpg_img")
-            cursor.execute("CREATE TABLE jpg_img(id INT, img BLOB)")
+            cursor.execute("DROP TABLE IF EXISTS jpg_img_w")
+            cursor.execute("CREATE TABLE jpg_img_w(id INT, img BLOB)")
 
-            cursor.execute("DROP TABLE IF EXISTS hdr_img")
-            cursor.execute("CREATE TABLE hdr_img(id INT, img BLOB)")
+            cursor.execute("DROP TABLE IF EXISTS jpg_img_l")
+            cursor.execute("CREATE TABLE jpg_img_l(id INT, img BLOB)")
 
-            cursor.execute("DROP TABLE IF EXISTS jpg_hsv")
-            cursor.execute("CREATE TABLE jpg_hsv(id INT, img BLOB)")
+            cursor.execute("DROP TABLE IF EXISTS jpg_img_h")
+            cursor.execute("CREATE TABLE jpg_img_h(id INT, img BLOB)")
 
-            cursor.execute("DROP TABLE IF EXISTS jpg_jet")
-            cursor.execute("CREATE TABLE jpg_jet(id INT, img BLOB)")
+            cursor.execute("DROP TABLE IF EXISTS jpg_w_jet")
+            cursor.execute("CREATE TABLE jpg_w_jet(id INT, img BLOB)")
 
-            cursor.execute("DROP TABLE IF EXISTS hdr_hsv")
-            cursor.execute("CREATE TABLE hdr_hsv(id INT, img BLOB)")
+            cursor.execute("DROP TABLE IF EXISTS jpg_w_hsv")
+            cursor.execute("CREATE TABLE jpg_w_hsv(id INT, img BLOB)")
 
-            cursor.execute("DROP TABLE IF EXISTS hdr_jet")
-            cursor.execute("CREATE TABLE hdr_jet(id INT, img BLOB)")
+            cursor.execute("DROP TABLE IF EXISTS jpg_l_jet")
+            cursor.execute("CREATE TABLE jpg_l_jet(id INT, img BLOB)")
+
+            cursor.execute("DROP TABLE IF EXISTS jpg_l_hsv")
+            cursor.execute("CREATE TABLE jpg_l_hsv(id INT, img BLOB)")
+
+            cursor.execute("DROP TABLE IF EXISTS jpg_h_jet")
+            cursor.execute("CREATE TABLE jpg_h_jet(id INT, img BLOB)")
+
+            cursor.execute("DROP TABLE IF EXISTS jpg_h_hsv")
+            cursor.execute("CREATE TABLE jpg_h_hsv(id INT, img BLOB)")
 
             db.commit()
             db.close()
@@ -480,11 +530,11 @@ class MyForm(QMainWindow):
     def load_all_images_toDB(self):
 
         try:
-            if(not self.jpg_img_path_list or not self.hdr_img_path_list):
+            if(not self.jpg_img_well_path_list or not self.jpg_img_low_path_list):
                 self.showErrorMsgBox("Could not load images.","No images found.")
                 return
 
-            self.tot_numb_of_images = len(self.jpg_img_path_list)
+            self.tot_numb_of_images = len(self.jpg_img_well_path_list)
             totnum_of_imgs = math.ceil(self.tot_numb_of_images * (1/3))
 
             print('Start after {} images'.format(totnum_of_imgs))
@@ -498,36 +548,45 @@ class MyForm(QMainWindow):
             con = sqlite3.connect(self.database_name)
             cur = con.cursor()
 
-            for jpg_path, hdr_path in zip(self.jpg_img_path_list,self.hdr_img_path_list):
+            well_list = self.jpg_img_well_path_list
+            low_list  = self.jpg_img_low_path_list
+            high_list = self.jpg_img_high_path_list
+
+            for jpg_well, jpg_low,jpg_high in zip(well_list, low_list,high_list):
 
                 img_cnt += 1
 
                 self.loading_complete = False
 
-                jpg_img = self.readImg_as_BGR2RGB(jpg_path)
-                hdr_img = self.readImg_as_BGR2RGB(hdr_path)
+                jpg_w_img = self.readImg_as_BGR2RGB(jpg_well)
+                jpg_l_img = self.readImg_as_BGR2RGB(jpg_low)
+                jpg_h_img = self.readImg_as_BGR2RGB(jpg_high)
 
-                jpg_bytes = cv2.imencode('.jpg', jpg_img)[1].tostring()
-                hdr_bytes = cv2.imencode('.jpg', hdr_img)[1].tostring()
+                jpg_w_bytes = cv2.imencode('.jpg', jpg_w_img)[1].tostring()
+                jpg_l_bytes = cv2.imencode('.jpg', jpg_l_img)[1].tostring()
+                jpg_h_bytes = cv2.imencode('.jpg', jpg_h_img)[1].tostring()
 
-                JPG2HSV = self.img2MAP_byteStr(jpg_img,'HSV')
-                JPG2JET = self.img2MAP_byteStr(jpg_img,'JET')
+                JPG_w_HSV = self.img2MAP_byteStr(jpg_w_img,'HSV')
+                JPG_l_HSV = self.img2MAP_byteStr(jpg_l_img,'HSV')
+                JPG_h_HSV = self.img2MAP_byteStr(jpg_h_img,'HSV')
 
-                HD2RHSV = self.img2MAP_byteStr(hdr_img,'HSV',with_mask=False)
-                HDR2JET = self.img2MAP_byteStr(hdr_img,'JET',with_mask=False)
+                JPG_w_JET = self.img2MAP_byteStr(jpg_w_img,'JET')
+                JPG_l_JET = self.img2MAP_byteStr(jpg_l_img,'JET')
+                JPG_h_JET = self.img2MAP_byteStr(jpg_h_img,'JET')
 
-                cur.execute("insert into jpg_img VALUES(?,?)", (img_cnt, sqlite3.Binary(jpg_bytes)))
-                cur.execute("insert into hdr_img VALUES(?,?)", (img_cnt, sqlite3.Binary(hdr_bytes)))
+                cur.execute("insert into jpg_img_w VALUES(?,?)", (img_cnt, sqlite3.Binary(jpg_w_bytes)))
+                cur.execute("insert into jpg_img_l VALUES(?,?)", (img_cnt, sqlite3.Binary(jpg_l_bytes)))
+                cur.execute("insert into jpg_img_h VALUES(?,?)", (img_cnt, sqlite3.Binary(jpg_h_bytes)))
 
-                cur.execute("insert into jpg_hsv VALUES(?,?)", (img_cnt, sqlite3.Binary(JPG2HSV)))
-                cur.execute("insert into jpg_jet VALUES(?,?)", (img_cnt, sqlite3.Binary(JPG2JET)))
+                cur.execute("insert into jpg_w_jet VALUES(?,?)", (img_cnt, sqlite3.Binary(JPG_w_JET)))
+                cur.execute("insert into jpg_l_jet VALUES(?,?)", (img_cnt, sqlite3.Binary(JPG_l_JET)))
+                cur.execute("insert into jpg_h_jet VALUES(?,?)", (img_cnt, sqlite3.Binary(JPG_h_JET)))
 
-                cur.execute("insert into hdr_hsv VALUES(?,?)", (img_cnt, sqlite3.Binary(HD2RHSV)))
-                cur.execute("insert into hdr_jet VALUES(?,?)", (img_cnt, sqlite3.Binary(HDR2JET)))
+                cur.execute("insert into jpg_w_hsv VALUES(?,?)", (img_cnt, sqlite3.Binary(JPG_w_HSV)))
+                cur.execute("insert into jpg_l_hsv VALUES(?,?)", (img_cnt, sqlite3.Binary(JPG_l_HSV)))
+                cur.execute("insert into jpg_h_hsv VALUES(?,?)", (img_cnt, sqlite3.Binary(JPG_h_HSV)))
 
                 con.commit()
-
-
 
                 if len(status_txt) >= 200:
                     status_txt = 'Loading Images: .'
@@ -583,7 +642,7 @@ class MyForm(QMainWindow):
     #########################################################
     # Plot functions
     #########################################################
-    def plot_rgb_histogram(self, opencv_img):
+    def plot_rgb_w_histogram(self, opencv_img):
 
         try:
             hist_r = cv2.calcHist([opencv_img], [0], self.image_mask, [256], [1, 256])
@@ -592,30 +651,56 @@ class MyForm(QMainWindow):
 
             x = np.arange(1, 257, dtype=int)
 
-            self.hist_plot_rgb_r.setData(x,hist_r[:,0])
-            self.hist_plot_rgb_g.setData(x,hist_g[:,0])
-            self.hist_plot_rgb_b.setData(x,hist_b[:,0])
+            #max_val = max_val + 50
+            #self.pw_rgb_w_hist.setXRange(1, max_val, padding=0)
 
+            self.hist_w_plot_rgb_r.setData(x,hist_r[:,0])
+            self.hist_w_plot_rgb_g.setData(x,hist_g[:,0])
+            self.hist_w_plot_rgb_b.setData(x,hist_b[:,0])
 
         except Exception as e:
-            print("plot_rgb_histogram: ", str(e))
+            print("plot_rgb_w_histogram: ", str(e))
 
-    def plot_hdr_histogram(self, hdr_img):
+    def plot_rgb_l_histogram(self, opencv_img):
 
         try:
-            hist_r = cv2.calcHist([hdr_img], [0], self.image_mask, [256], [1, 256])
-            hist_g = cv2.calcHist([hdr_img], [1], self.image_mask, [256], [1, 256])
-            hist_b = cv2.calcHist([hdr_img], [2], self.image_mask, [256], [1, 256])
+            hist_r = cv2.calcHist([opencv_img], [0], self.image_mask, [256], [1, 256])
+            hist_g = cv2.calcHist([opencv_img], [1], self.image_mask, [256], [1, 256])
+            hist_b = cv2.calcHist([opencv_img], [2], self.image_mask, [256], [1, 256])
 
             x = np.arange(1, 257, dtype=int)
 
-            self.hist_plot_hdr_r.setData(x,hist_r[:,0])
-            self.hist_plot_hdr_g.setData(x,hist_g[:,0])
-            self.hist_plot_hdr_b.setData(x,hist_b[:,0])
+
+            #max_val = 255
+            #self.pw_rgb_l_hist.setXRange(1, max_val, padding=0)
+
+            self.hist_l_plot_rgb_r.setData(x, hist_r[:, 0])
+            self.hist_l_plot_rgb_g.setData(x, hist_g[:, 0])
+            self.hist_l_plot_rgb_b.setData(x, hist_b[:, 0])
 
 
         except Exception as e:
-            print("plot_hdr_histogram: ", str(e))
+            print("plot_rgb_l_histogram: ", str(e))
+
+    def plot_rgb_h_histogram(self, opencv_img):
+
+        try:
+            hist_r = cv2.calcHist([opencv_img], [0], self.image_mask, [256], [1, 256])
+            hist_g = cv2.calcHist([opencv_img], [1], self.image_mask, [256], [1, 256])
+            hist_b = cv2.calcHist([opencv_img], [2], self.image_mask, [256], [1, 256])
+
+            x = np.arange(1, 257, dtype=int)
+
+            max_val = 50
+            self.pw_rgb_h_hist.setXRange(1, max_val, padding=0)
+
+            self.hist_h_plot_rgb_r.setData(x, hist_r[:, 0])
+            self.hist_h_plot_rgb_g.setData(x, hist_g[:, 0])
+            self.hist_h_plot_rgb_b.setData(x, hist_b[:, 0])
+
+
+        except Exception as e:
+            print("plot_rgb_h_histogram: ", str(e))
 
     #########################################################
     # Navigating through images
@@ -626,25 +711,31 @@ class MyForm(QMainWindow):
             if self.slideshow_step >= self.tot_numb_of_images:
                 self.slideshow_step = 1
 
-            jpg_img = self.getImgByObjID(self.slideshow_step, 'jpg_img')
-            hdr_img = self.getImgByObjID(self.slideshow_step, 'hdr_img')
+            jpg_w_img = self.getImgByObjID(self.slideshow_step, 'jpg_img_w')
+            jpg_l_img = self.getImgByObjID(self.slideshow_step, 'jpg_img_l')
+            jpg_h_img = self.getImgByObjID(self.slideshow_step, 'jpg_img_h')
 
-            if  self.MAP is 'HSV':
-                jpg_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_hsv')
-                hdr_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_hsv')
+            if self.MAP is 'HSV':
+                jpg_w_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_w_hsv')
+                jpg_l_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_l_hsv')
+                jpg_h_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_h_hsv')
 
-            if  self.MAP is 'JET':
-                jpg_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_jet')
-                hdr_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_jet')
+            if self.MAP is 'JET':
+                jpg_w_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_w_jet')
+                jpg_l_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_l_jet')
+                jpg_h_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_h_jet')
 
-            self.ui.lbl_JPG_img.setPixmap(self.cv2qpixmap(jpg_img))
-            self.ui.lbl_HDR_img.setPixmap(self.cv2qpixmap(hdr_img))
+            self.ui.lbl_JPG_img_1.setPixmap(self.cv2qpixmap(jpg_w_img))
+            self.ui.lbl_JPG_img_2.setPixmap(self.cv2qpixmap(jpg_l_img))
+            self.ui.lbl_JPG_img_3.setPixmap(self.cv2qpixmap(jpg_h_img))
 
-            self.ui.lbl_JPG_COLMAP.setPixmap(self.cv2qpixmap(jpg_MAP))
-            self.ui.lbl_HDR_COLMAP.setPixmap(self.cv2qpixmap(hdr_MAP))
+            self.ui.lbl_JPG_COLORMAP_1.setPixmap(self.cv2qpixmap(jpg_w_MAP))
+            self.ui.lbl_JPG_COLORMAP_2.setPixmap(self.cv2qpixmap(jpg_l_MAP))
+            self.ui.lbl_JPG_COLORMAP_3.setPixmap(self.cv2qpixmap(jpg_h_MAP))
 
-            self.plot_rgb_histogram(jpg_img)
-            self.plot_hdr_histogram(hdr_img)
+            self.plot_rgb_w_histogram(jpg_w_img)
+            self.plot_rgb_l_histogram(jpg_l_img)
+            self.plot_rgb_h_histogram(jpg_h_img)
 
             self.slideshow_step += 1
 
@@ -677,7 +768,7 @@ class MyForm(QMainWindow):
 
     def startStopSlideShow(self):
 
-        if (len(self.jpg_img_path_list) == 0 and not self.database_avaiable):
+        if (len(self.jpg_img_well_path_list) == 0 and not self.database_avaiable):
             return
 
         btn_text = self.ui.pushButton_RunImgSeq.text()
@@ -718,26 +809,31 @@ class MyForm(QMainWindow):
             else:
                 current_image = self.slideshow_step
 
-            jpg_img = self.getImgByObjID(self.slideshow_step, 'jpg_img')
-            hdr_img = self.getImgByObjID(self.slideshow_step, 'hdr_img')
+            jpg_w_img = self.getImgByObjID(self.slideshow_step, 'jpg_img_w')
+            jpg_l_img = self.getImgByObjID(self.slideshow_step, 'jpg_img_l')
+            jpg_h_img = self.getImgByObjID(self.slideshow_step, 'jpg_img_h')
 
             if  self.MAP is 'HSV':
-                jpg_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_hsv')
-                hdr_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_hsv')
+                jpg_w_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_w_hsv')
+                jpg_l_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_l_hsv')
+                jpg_h_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_h_hsv')
 
             if  self.MAP is 'JET':
-                jpg_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_jet')
-                hdr_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_jet')
+                jpg_w_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_w_jet')
+                jpg_l_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_l_jet')
+                jpg_h_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_h_jet')
 
-            self.ui.lbl_JPG_img.setPixmap(self.cv2qpixmap(jpg_img))
-            self.ui.lbl_HDR_img.setPixmap(self.cv2qpixmap(hdr_img))
+            self.ui.lbl_JPG_img_1.setPixmap(self.cv2qpixmap(jpg_w_img))
+            self.ui.lbl_JPG_img_2.setPixmap(self.cv2qpixmap(jpg_l_img))
+            self.ui.lbl_JPG_img_3.setPixmap(self.cv2qpixmap(jpg_h_img))
 
-            self.ui.lbl_JPG_COLMAP.setPixmap(self.cv2qpixmap(jpg_MAP))
-            self.ui.lbl_HDR_COLMAP.setPixmap(self.cv2qpixmap(hdr_MAP))
+            self.ui.lbl_JPG_COLORMAP_1.setPixmap(self.cv2qpixmap(jpg_w_MAP))
+            self.ui.lbl_JPG_COLORMAP_2.setPixmap(self.cv2qpixmap(jpg_l_MAP))
+            self.ui.lbl_JPG_COLORMAP_3.setPixmap(self.cv2qpixmap(jpg_h_MAP))
 
-            self.plot_rgb_histogram(jpg_img)
-            self.plot_hdr_histogram(hdr_img)
-
+            self.plot_rgb_w_histogram(jpg_w_img)
+            self.plot_rgb_l_histogram(jpg_l_img)
+            self.plot_rgb_h_histogram(jpg_h_img)
 
             self.ui.lbl_progress_status.setText(
                 'Showing image {} of {} '.format(current_image, self.tot_numb_of_images))
@@ -757,25 +853,31 @@ class MyForm(QMainWindow):
             else:
                 current_image = self.slideshow_step
 
-            jpg_img = self.getImgByObjID(self.slideshow_step, 'jpg_img')
-            hdr_img = self.getImgByObjID(self.slideshow_step, 'hdr_img')
+            jpg_w_img = self.getImgByObjID(self.slideshow_step, 'jpg_img_w')
+            jpg_l_img = self.getImgByObjID(self.slideshow_step, 'jpg_img_l')
+            jpg_h_img = self.getImgByObjID(self.slideshow_step, 'jpg_img_h')
 
-            if  self.MAP is 'HSV':
-                jpg_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_hsv')
-                hdr_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_hsv')
+            if self.MAP is 'HSV':
+                jpg_w_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_w_hsv')
+                jpg_l_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_l_hsv')
+                jpg_h_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_h_hsv')
 
-            if  self.MAP is 'JET':
-                jpg_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_jet')
-                hdr_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_jet')
+            if self.MAP is 'JET':
+                jpg_w_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_w_jet')
+                jpg_l_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_l_jet')
+                jpg_h_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_h_jet')
 
-            self.ui.lbl_JPG_img.setPixmap(self.cv2qpixmap(jpg_img))
-            self.ui.lbl_HDR_img.setPixmap(self.cv2qpixmap(hdr_img))
+            self.ui.lbl_JPG_img_1.setPixmap(self.cv2qpixmap(jpg_w_img))
+            self.ui.lbl_JPG_img_2.setPixmap(self.cv2qpixmap(jpg_l_img))
+            self.ui.lbl_JPG_img_3.setPixmap(self.cv2qpixmap(jpg_h_img))
 
-            self.ui.lbl_JPG_COLMAP.setPixmap(self.cv2qpixmap(jpg_MAP))
-            self.ui.lbl_HDR_COLMAP.setPixmap(self.cv2qpixmap(hdr_MAP))
+            self.ui.lbl_JPG_COLORMAP_1.setPixmap(self.cv2qpixmap(jpg_w_MAP))
+            self.ui.lbl_JPG_COLORMAP_2.setPixmap(self.cv2qpixmap(jpg_l_MAP))
+            self.ui.lbl_JPG_COLORMAP_3.setPixmap(self.cv2qpixmap(jpg_h_MAP))
 
-            self.plot_rgb_histogram(jpg_img)
-            self.plot_hdr_histogram(hdr_img)
+            self.plot_rgb_w_histogram(jpg_w_img)
+            self.plot_rgb_l_histogram(jpg_l_img)
+            self.plot_rgb_h_histogram(jpg_h_img)
 
             self.ui.lbl_progress_status.setText(
                 'Showing image {} of {} '.format(current_image, self.tot_numb_of_images))
@@ -829,9 +931,9 @@ class MyForm(QMainWindow):
 
         try:
             if self.imageLoaded:
-                if len(self.pixMapImg_HDR_img_list) > 0:
+                if len(self.pixMapImg_JPG_img_low_list) > 0:
 
-                    qimage = self.pixMapImg_HDR_img_list[self.slideshow_step - 1].toImage()
+                    qimage = self.pixMapImg_JPG_img_low_list[self.slideshow_step - 1].toImage()
                     pixel_val = qimage.pixel(true_x, true_y)
 
                     _red   = qRed(pixel_val)
@@ -864,29 +966,37 @@ class MyForm(QMainWindow):
 
         return objid
 
-    def set_img5_size(self, img):
-        if img is None:
-            print('Error set_img5_size: missing image')
-            return
-        self.jpg_img_shape = img.shape
+    def get_low_exposed_name(self, dir):
+        if os.path.isfile(join(dir, 'raw_img-4.jpg')):
+            return 'raw_img-4.jpg'
+        elif os.path.isfile(join(dir, 'raw_img9.jpg')):
+            return 'raw_img9.jpg'
 
-    def set_hdr_size(self, img):
-        if img is None:
-            print('Error set_hdr_size: missing image')
-            return
-        self.hdr_img_shape = img.shape
-
-    def get_image_name(self, dir):
-        print('get_sw_version path:  {}'.format(dir))
-
-        if os.path.isfile(join(dir, 'raw_img-2.jpg')):
+    def get_well_exposed_name(self,dir):
+        if os.path.isfile(join(dir, 'raw_img0.jpg')):
             return 'raw_img0.jpg'
         elif os.path.isfile(join(dir, 'raw_img5.jpg')):
             return 'raw_img5.jpg'
 
+    def get_low_exposed_name(self,dir):
+        if os.path.isfile(join(dir, 'raw_img-2.jpg')):
+            return 'raw_img-2.jpg'
+        elif os.path.isfile(join(dir, 'raw_img0.jpg')):
+            return 'raw_img0.jpg'
 
+    def get_high_exposed_name(self, dir):
+        if os.path.isfile(join(dir, 'raw_img-4.jpg')):
+            return 'raw_img-4.jpg'
+        elif os.path.isfile(join(dir, 'raw_img9.jpg')):
+            return 'raw_img9.jpg'
 
-        #########################################################
+    def get_medium_exposed_name(self, dir):
+        if os.path.isfile(join(dir, 'raw_img-2.jpg')):
+            return 'raw_img-2.jpg'
+        elif os.path.isfile(join(dir, 'raw_img0.jpg')):
+            return 'raw_img0.jpg'
+
+    #########################################################
     # Widget events
     #########################################################
     def draw_circle(self, event, x, y, flags, param):
@@ -901,7 +1011,7 @@ class MyForm(QMainWindow):
             x = 0
             y = 0
 
-            if srcEvent == self.ui.lbl_HDR_img:
+            if srcEvent == self.ui.lbl_JPG_img_2:
                 if event.type() == QEvent.Leave:
                     string = 'empty'
 
@@ -961,9 +1071,11 @@ class MyForm(QMainWindow):
             print('showErrorMsgBox: {}'.format(e))
 
     def on_item_changed_cam1(self,curr, prev):
+        print('text_1: {}'.format(curr.text()))
         self.curr_item_slec_cam1 = curr.text()
 
     def on_item_changed_cam2(self,curr, prev):
+        print('text_2: {}'.format(curr.text()))
         self.curr_item_slec_cam2 = curr.text()
 
     def on_item_doubleclicked_cam1(self):
@@ -997,22 +1109,10 @@ class MyForm(QMainWindow):
             self.ui.pushButton_browse.setEnabled(False)
             allDirs = self.getDirectories(join(sourceDir, 'temp'), max_img_to_load = MAX_LOAD_IMAGES)
 
-            name_img5 = self.get_image_name(allDirs[0])
-            name_hdr  = "hdr_data.jpg"
-
-            for dir in allDirs:
-                path_img = join(dir,name_img5)
-                path_hdr = join(dir,'output',name_hdr)
-                self.jpg_img_path_list.append(path_img)
-                self.hdr_img_path_list.append(path_hdr)
-
-            jpg_img = self.readImg_as_BGR2RGB(self.jpg_img_path_list[0])
-            hdr_img = self.readImg_as_BGR2RGB(self.hdr_img_path_list[0])
-            self.set_img5_size(jpg_img)
-            self.set_hdr_size(hdr_img)
+            self.collect_imgs(allDirs)
 
             pool = ThreadPoolExecutor(max_workers=3)
-            # pool.submit(self.load_all_images)
+            #pool.submit(self.load_all_images)
             pool.submit(self.load_all_images_toDB)
 
         except Exception as e:
