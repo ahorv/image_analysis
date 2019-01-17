@@ -1,6 +1,7 @@
 from __future__ import division
 
 import cv2
+import cmapy
 import numpy as np
 import sqlite3
 from glob import glob
@@ -193,7 +194,9 @@ class MyForm(QMainWindow):
         ###########################################################
         self.qimage_width  = 2592
         self.qimage_height = 1944
-        self.MAP = 'HSV'                   # Set type of color map used 'JET','HSV'
+        self.COLORMAP_1 = cmapy.cmap('jet')
+        self.COLORMAP_2 = cv2.COLORMAP_HSV
+        self.USE_CMAP = '1'                   # Set type of color map used '1' or '2'
         self.database_name = "img_analysis.db"
         self.database_avaiable = False
 
@@ -511,12 +514,12 @@ class MyForm(QMainWindow):
         mask = ImageProcessingLibrary.Mask(self.CAM, img.shape)
 
         if map == 'HSV':
-            img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-            img = cv2.applyColorMap(img_gray, cv2.COLORMAP_HSV)
+            #img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+            img = cv2.applyColorMap(img, self.COLORMAP_2)
 
         if map == 'JET':
-            img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-            img = cv2.applyColorMap(img_gray, cv2.COLORMAP_JET)
+            #img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+            img = cv2.applyColorMap(img, self.COLORMAP_1)
 
         if with_mask:
             img_masked = mask.maske_OpenCV_Image(img)
@@ -715,15 +718,15 @@ class MyForm(QMainWindow):
             jpg_l_img = self.getImgByObjID(self.slideshow_step, 'jpg_img_l')
             jpg_h_img = self.getImgByObjID(self.slideshow_step, 'jpg_img_h')
 
-            if self.MAP is 'HSV':
+            if self.USE_CMAP is '2':
                 jpg_w_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_w_hsv')
                 jpg_l_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_l_hsv')
                 jpg_h_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_h_hsv')
 
-            if self.MAP is 'JET':
+            if self.USE_CMAP is '1':
                 jpg_w_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_w_jet')
-                jpg_l_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_l_jet')
-                jpg_h_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_h_jet')
+                jpg_l_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_l_jet')
+                jpg_h_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_h_jet')
 
             self.ui.lbl_JPG_img_1.setPixmap(self.cv2qpixmap(jpg_w_img))
             self.ui.lbl_JPG_img_2.setPixmap(self.cv2qpixmap(jpg_l_img))
@@ -752,12 +755,12 @@ class MyForm(QMainWindow):
             mask = ImageProcessingLibrary.Mask(self.CAM, opencv_img.shape)
 
             if map == 'HSV':
-                img_gray = cv2.cvtColor(opencv_img, cv2.COLOR_RGB2GRAY)
-                img = cv2.applyColorMap(img_gray, cv2.COLORMAP_HSV)
+                #img_gray = cv2.cvtColor(opencv_img, cv2.COLOR_RGB2GRAY)
+                img = cv2.applyColorMap(opencv_img, self.COLORMAP_2)
 
             if map == 'JET':
-                img_gray = cv2.cvtColor(opencv_img, cv2.COLOR_RGB2GRAY)
-                img = cv2.applyColorMap(img_gray, cv2.COLORMAP_JET)
+                #img_gray = cv2.cvtColor(opencv_img, cv2.COLOR_RGB2GRAY)
+                img = cv2.applyColorMap(opencv_img, self.COLORMAP_1)
 
             img_masked = mask.maske_OpenCV_Image(img)
 
@@ -813,15 +816,15 @@ class MyForm(QMainWindow):
             jpg_l_img = self.getImgByObjID(self.slideshow_step, 'jpg_img_l')
             jpg_h_img = self.getImgByObjID(self.slideshow_step, 'jpg_img_h')
 
-            if  self.MAP is 'HSV':
+            if  self.USE_CMAP is '2':
                 jpg_w_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_w_hsv')
                 jpg_l_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_l_hsv')
                 jpg_h_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_h_hsv')
 
-            if  self.MAP is 'JET':
+            if  self.USE_CMAP is '1':
                 jpg_w_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_w_jet')
-                jpg_l_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_l_jet')
-                jpg_h_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_h_jet')
+                jpg_l_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_l_jet')
+                jpg_h_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_h_jet')
 
             self.ui.lbl_JPG_img_1.setPixmap(self.cv2qpixmap(jpg_w_img))
             self.ui.lbl_JPG_img_2.setPixmap(self.cv2qpixmap(jpg_l_img))
@@ -857,15 +860,15 @@ class MyForm(QMainWindow):
             jpg_l_img = self.getImgByObjID(self.slideshow_step, 'jpg_img_l')
             jpg_h_img = self.getImgByObjID(self.slideshow_step, 'jpg_img_h')
 
-            if self.MAP is 'HSV':
+            if self.USE_CMAP is '2':
                 jpg_w_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_w_hsv')
                 jpg_l_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_l_hsv')
                 jpg_h_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_h_hsv')
 
-            if self.MAP is 'JET':
+            if self.USE_CMAP is '1':
                 jpg_w_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_w_jet')
-                jpg_l_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_l_jet')
-                jpg_h_MAP = self.getImgByObjID(self.slideshow_step, 'hdr_h_jet')
+                jpg_l_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_l_jet')
+                jpg_h_MAP = self.getImgByObjID(self.slideshow_step, 'jpg_h_jet')
 
             self.ui.lbl_JPG_img_1.setPixmap(self.cv2qpixmap(jpg_w_img))
             self.ui.lbl_JPG_img_2.setPixmap(self.cv2qpixmap(jpg_l_img))

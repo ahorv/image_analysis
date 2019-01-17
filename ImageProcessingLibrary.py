@@ -12,9 +12,9 @@ class Mask(object):
             #size = 1944, 2592, 3
             empty_img = np.zeros(shape, dtype=np.uint8)
             if self.cam_type is 1:
-                self.mask = self.cmask([880, 1190], 1117, empty_img)
+                self.mask = self.cmask([790, 1190], 1000, empty_img)   # 20181012_1: [790, 1190], 1000,
             if self.cam_type is 2:
-                self.mask = self.cmask([985, 1340], 1089, empty_img)  # [950, 1340], 1117,
+                self.mask = self.cmask([985, 1340], 1089, empty_img)  # 20181022_2:  [985, 1340], 1089, ; [1093, 1299],1080
 
         except Exception as e:
             print("init Mask: ", str(e))
@@ -61,18 +61,17 @@ class Mask(object):
             blue  = input_image[:, :, 2]
 
             # Show mask in red
-            '''
-            h = input_image.shape[0]            
-            w = input_image.shape[1]
+            if False:
+                h = input_image.shape[0]
+                w = input_image.shape[1]
 
-            for y in range(0, h):
-                for x in range(0, w):
-                    if self.mask[y, x] == 0:
-                        red[y, x] = 225
-            r_img = red
-            '''
-
-            r_img = red.astype(float)   * self.mask
+                for y in range(0, h):
+                    for x in range(0, w):
+                        if self.mask[y, x] == 0:
+                            red[y, x] = 225
+                r_img = red
+            else:
+                r_img = red.astype(float) * self.mask
             g_img = green.astype(float) * self.mask
             b_img = blue.astype(float) * self.mask
 
